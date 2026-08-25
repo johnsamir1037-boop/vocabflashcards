@@ -1,0 +1,131 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>D Words Flashcards</title>
+  <style>
+    :root { color-scheme: light dark; font-family: system-ui, sans-serif; }
+    body { margin: 0; min-height: 100vh; display: grid; place-items: center; background: #f3f5fb; color: #192033; }
+    main { width: min(92vw, 680px); padding: 28px 0; }
+    h1 { font-size: clamp(1.6rem, 4vw, 2.2rem); margin: 0 0 6px; }
+    .sub, .count { color: #60708d; }
+    .top, .controls { display:flex; align-items:center; justify-content:space-between; gap:12px; flex-wrap:wrap; }
+    .progress { height: 8px; background:#dfe5f2; border-radius:99px; overflow:hidden; margin:20px 0; }
+    .progress > div { height:100%; width:0; background:#5865f2; transition:width .2s; }
+    .scene { perspective: 1100px; height: 360px; }
+    .card { position:relative; height:100%; width:100%; transform-style:preserve-3d; transition:transform .45s; cursor:pointer; }
+    .card.flipped { transform:rotateY(180deg); }
+    .face { position:absolute; inset:0; border-radius:24px; padding:34px; box-sizing:border-box; backface-visibility:hidden; display:flex; flex-direction:column; justify-content:center; align-items:center; text-align:center; box-shadow:0 12px 35px #1b28502b; }
+    .front { background:linear-gradient(135deg,#5865f2,#8059e8); color:white; }
+    .back { background:white; transform:rotateY(180deg); color:#192033; }
+    .word { font-size:clamp(2.5rem, 9vw, 5rem); font-weight:750; }
+    .hint { margin-top:22px; opacity:.85; }
+    .meaning { font-size:clamp(1.25rem, 3vw, 1.6rem); font-weight:650; }
+    .arabic { font-size:1.35rem; color:#5865f2; margin:14px 0; direction:rtl; }
+    .example { font-style:italic; color:#526078; max-width:500px; }
+    .controls { margin-top:22px; justify-content:center; }
+    button { font:inherit; border:0; border-radius:12px; padding:11px 17px; cursor:pointer; background:#e4e8f5; color:#202946; font-weight:650; }
+    button.primary { background:#5865f2; color:white; }
+    button:focus-visible { outline:3px solid #f3a63b; outline-offset:3px; }
+    @media (prefers-color-scheme: dark) { body { background:#101420; color:#eef1ff; } .sub,.count { color:#a9b5d0; } .progress { background:#30384f; } .back { background:#202638; color:#eef1ff; } .example { color:#bac5de; } button { background:#30384f; color:#f1f3ff; } }
+    @media (max-width:480px) { .scene { height:390px; } .face { padding:24px; } button { flex:1; } }
+  </style>
+</head>
+<body>
+<main>
+  <div class="top"><div><h1>D Words</h1><div class="sub">Tap the card to reveal the answer</div></div><strong class="count" id="count"></strong></div>
+  <div class="progress" aria-label="Study progress"><div id="bar"></div></div>
+  <div class="scene"><div class="card" id="card" role="button" tabindex="0" aria-label="Flashcard; press Enter or Space to flip">
+    <section class="face front"><div class="word" id="word"></div><div class="hint">Tap to flip</div></section>
+    <section class="face back"><div class="meaning" id="meaning"></div><div class="arabic" id="arabic"></div><div class="example" id="example"></div></section>
+  </div></div>
+  <div class="controls"><button id="prev">← Previous</button><button class="primary" id="flip">Flip card</button><button id="next">Next →</button><button id="shuffle">Shuffle</button></div>
+</main>
+<script>
+const cards = [
+['Dead','not alive; not working','ميت / مش شغال','My phone is dead.'],
+['Deal','an agreement; to handle something','اتفاق / يتعامل مع','We made a deal.'],
+['Dear','loved or important; used in greetings','عزيز / غالي','Dear John,'],
+['Debate','a serious discussion with different opinions','مناظرة / نقاش','They debated the issue.'],
+['Debt','money you owe','دَين','He’s in debt.'],
+['Decade','a period of ten years','عقد','I’ve lived here for a decade.'],
+['Decent','reasonably good','كويس / مقبول','The hotel was decent.'],
+['Declare','announce officially','يُعلن رسميًا','The country declared war.'],
+['Decline','refuse politely; decrease','يرفض بأدب / ينخفض','I declined the offer.'],
+['Define','explain the exact meaning','يُعرّف','How would you define success?'],
+['Definite','certain and clear','مؤكد / أكيد','I need a definite answer.'],
+['Definitely','certainly','بالتأكيد / أكيد','I’ll definitely go.'],
+['Definition','the meaning of a word or idea','تعريف / معنى','What’s the definition?'],
+['Degree','a level; a university qualification','درجة / شهادة جامعية','She has a degree in tourism.'],
+['Deliberate','intentional; on purpose','متعمد / مقصود','It was a deliberate mistake.'],
+['Delight','great pleasure','سعادة كبيرة / متعة','The news was a delight.'],
+['Deliver','take something to someone; provide','يوصل / يسلّم','They deliver food.'],
+['Demonstrate','show how something works; prove','يوضح / يبرهن','Let me demonstrate it.'],
+['Departure','the act or time of leaving','مغادرة','Our departure is at 8 a.m.'],
+['Dependent','needing support from someone or something','معتمد على','Children are dependent on parents.'],
+['Depth','distance from top to bottom','عمق','The pool is two meters deep.'],
+['Desert','a very dry area of land','صحراء','The Sahara is a huge desert.'],
+['Deserve','be worthy of something','يستحق','You deserve a break.'],
+['Desire','a strong wish','رغبة قوية','He has a desire to succeed.'],
+['Desk','a table for working or studying','مكتب','I’m sitting at my desk.'],
+['Desperate','urgently needing or wanting something','محتاج جدًا / مضطر','I was desperate to find my phone.'],
+['Dig','make a hole in the ground','يحفر','They’re digging a hole.'],
+['Digital','using electronic technology','رقمي / إلكتروني','I have a digital copy.'],
+['Direct','straight; to guide','مباشر / يوجّه','Is there a direct flight?'],
+['Directly','immediately; without an intermediary','مباشرة / على طول','I’ll contact him directly.'],
+['Director','a person in charge; a film director','مدير / مخرج','The director called a meeting.'],
+['Dirt','soil; something unclean','تراب / وسخ','There’s dirt on your shoes.'],
+['Dirty','not clean','متسخ','Your hands are dirty.'],
+['Disadvantage','a negative point','عيب / نقطة ضعف','The price is a disadvantage.'],
+['Disappointed','unhappy because expectations were not met','محبط / خائب الأمل','I’m disappointed with the result.'],
+['Disappointing','causing disappointment','مخيب للآمال','The movie was disappointing.'],
+['Disaster','a very bad event or situation','كارثة','The trip was a disaster.'],
+['Disc','a flat round object for data','قرص','The data is on a disc.'],
+['Discipline','self-control; a field of study','انضباط / مجال دراسي','You need discipline to succeed.'],
+['Discount','a reduction in price','خصم','Can I get a discount?'],
+['Discover','find something for the first time','يكتشف','They discovered a new species.'],
+['Discovery','something found for the first time','اكتشاف','It was an important discovery.'],
+['Discuss','talk about something in detail','يناقش','We need to discuss this.'],
+['Discussion','a conversation about a topic','مناقشة / نقاش','We had a long discussion.'],
+['Disease','an illness','مرض','Heart disease is common.'],
+['Dislike','not like','لا يحب / يكره قليلًا','I dislike crowded places.'],
+['Dismiss','send away; reject; fire from a job','يصرف / يرفض / يفصل من العمل','He was dismissed from his job.'],
+['Display','show publicly','يعرض','The products are displayed in the window.'],
+['Distance','space between two places or things','مسافة','The distance is 180 km.'],
+['Distribute','give or spread among people','يوزع','They distribute food to families.'],
+['Distribution','the act or way of giving out','توزيع','Food distribution took hours.'],
+['District','an area of a city or country','منطقة / حي','He lives in the business district.'],
+['Division','a department or separate part','قسم / فرع','She works in the sales division.'],
+['Divorced','no longer married','مطلق / مطلقة','His parents are divorced.'],
+['Domestic','relating to the same country','محلي / داخلي','Domestic flights are cheaper.'],
+['Domestic flight','a flight within one country','رحلة جوية داخلية','I flew from Cairo to Luxor.'],
+['Dominate','control or strongly influence','يسيطر على / يهيمن على','The team dominated the game.'],
+['Donate','give money or items to help','يتبرع','She donated to charity.'],
+['Doubt','uncertainty','شك','I have my doubts.'],
+['Downstairs','on a lower floor','تحت / في الدور اللي تحت','He’s downstairs.'],
+['Downwards','toward a lower position','إلى أسفل','The road slopes downwards.'],
+['Dozen','a group of twelve','دستة','I bought a dozen eggs.'],
+['Draft','a first version of writing','مسودة','I finished the first draft.'],
+['Drag','pull along a surface','يسحب','Drag the file into this folder.'],
+['Drama','a play/film; unnecessary conflict','دراما / مشاكل','I don’t want any drama.'],
+['Dramatic','sudden, exciting, or very noticeable','درامي / كبير ومفاجئ','Prices changed dramatically.'],
+['Dressed','wearing clothes','لابس / مرتدي ملابس','Are you dressed yet?'],
+['Driving','operating a vehicle','قيادة','I’m driving to work.'],
+['Drop','fall; decrease','يقع / يسقط / ينخفض','Prices dropped last month.'],
+['Drug','medicine; an illegal substance','دواء / مخدر','The doctor prescribed a drug.'],
+['Drum','an instrument you hit to make music','طبلة','He plays the drums.'],
+['Drunk','having had too much alcohol','سكران','He was drunk.'],
+['Due','expected or required at a certain time','مستحق / مقرر','The payment is due tomorrow.'],
+['Dusty','covered with dust','مغبر / مليان تراب','The room was dusty.']
+];
+let i=0; const $=id=>document.getElementById(id); const card=$('card');
+function render(){ const c=cards[i]; $('word').textContent=c[0]; $('meaning').textContent=c[1]; $('arabic').textContent=c[2]; $('example').textContent='“'+c[3]+'”'; $('count').textContent=`${i+1} / ${cards.length}`; $('bar').style.width=`${(i+1)/cards.length*100}%`; card.classList.remove('flipped'); }
+function move(n){ i=(i+n+cards.length)%cards.length; render(); }
+function flip(){ card.classList.toggle('flipped'); }
+$('next').onclick=()=>move(1); $('prev').onclick=()=>move(-1); $('flip').onclick=flip; card.onclick=flip;
+$('shuffle').onclick=()=>{ for(let n=cards.length-1;n>0;n--){const j=Math.floor(Math.random()*(n+1));[cards[n],cards[j]]=[cards[j],cards[n]];} i=0; render(); };
+document.addEventListener('keydown', e=>{ if(e.key==='ArrowRight') move(1); if(e.key==='ArrowLeft') move(-1); if(e.key===' '||e.key==='Enter'){e.preventDefault();flip();} }); render();
+</script>
+</body>
+</html>
