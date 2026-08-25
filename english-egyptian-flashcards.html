@@ -1,0 +1,108 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>English ↔ Egyptian Arabic Flashcards</title>
+  <style>
+    :root { color-scheme: light dark; --ink:#1e293b; --muted:#64748b; --bg:#f4f7fb; --card:#fff; --accent:#4f46e5; --accent2:#7c3aed; --line:#dce3ef; --good:#0f9d6d; --hard:#e66c35; }
+    * { box-sizing:border-box; }
+    body { margin:0; min-height:100vh; display:grid; place-items:center; padding:24px; background:radial-gradient(circle at 15% 8%, #e0e7ff 0, transparent 35%),radial-gradient(circle at 85% 90%, #f5d0fe 0, transparent 31%),var(--bg); font-family:Inter,ui-sans-serif,system-ui,-apple-system,"Segoe UI",sans-serif; color:var(--ink); }
+    main { width:min(720px,100%); }
+    header { display:flex; justify-content:space-between; align-items:flex-start; gap:16px; margin-bottom:22px; }
+    h1 { margin:0; font-size:clamp(1.35rem,3vw,2rem); letter-spacing:-.04em; }
+    .subtitle { margin:6px 0 0; color:var(--muted); font-size:.95rem; }
+    .progress { white-space:nowrap; padding:9px 12px; background:color-mix(in srgb,var(--card) 84%,transparent); border:1px solid var(--line); border-radius:999px; font-variant-numeric:tabular-nums; font-size:.9rem; }
+    .track { height:7px; background:#dbe3f2; border-radius:99px; overflow:hidden; margin-bottom:20px; }
+    .track > span { display:block; height:100%; width:0; background:linear-gradient(90deg,var(--accent),var(--accent2)); transition:width .25s ease; }
+    .scene { perspective:1200px; min-height:360px; }
+    .flashcard { width:100%; min-height:360px; position:relative; transform-style:preserve-3d; transition:transform .5s cubic-bezier(.2,.72,.2,1); cursor:pointer; outline:none; }
+    .flashcard.flipped { transform:rotateY(180deg); }
+    .face { position:absolute; inset:0; display:flex; flex-direction:column; align-items:center; justify-content:center; padding:clamp(28px,7vw,56px); border:1px solid var(--line); border-radius:25px; background:var(--card); box-shadow:0 20px 55px rgba(30,41,59,.12); backface-visibility:hidden; text-align:center; }
+    .back { transform:rotateY(180deg); align-items:stretch; text-align:left; overflow:auto; }
+    .label { color:var(--accent); font-weight:700; font-size:.76rem; letter-spacing:.12em; text-transform:uppercase; }
+    .term { margin:16px 0; font-size:clamp(1.8rem,6vw,3.4rem); line-height:1.12; letter-spacing:-.04em; }
+    .hint { margin:0; color:var(--muted); font-size:.92rem; }
+    .answer { font-size:clamp(1.06rem,2.7vw,1.35rem); line-height:1.75; }
+    .answer p { margin:0 0 17px; }
+    .answer strong { color:var(--accent); }
+    .arabic { direction:rtl; unicode-bidi:plaintext; font-family:Tahoma,"Segoe UI",sans-serif; }
+    .controls { display:grid; grid-template-columns:1fr 1.35fr 1fr; gap:10px; margin-top:18px; }
+    button { appearance:none; border:1px solid var(--line); border-radius:12px; padding:12px 14px; background:var(--card); color:var(--ink); font:inherit; font-weight:650; cursor:pointer; transition:transform .15s,background .15s,border-color .15s; }
+    button:hover { transform:translateY(-1px); border-color:#a5b4fc; }
+    button:focus-visible,.flashcard:focus-visible { outline:3px solid #a5b4fc; outline-offset:3px; }
+    .reveal { border-color:var(--accent); color:white; background:linear-gradient(120deg,var(--accent),var(--accent2)); }
+    .study { display:flex; justify-content:center; gap:9px; margin-top:18px; min-height:47px; }
+    .study[hidden] { display:none; }
+    .again { color:var(--hard); } .know { color:var(--good); }
+    .status { min-height:24px; text-align:center; color:var(--muted); margin:15px 0 0; font-size:.9rem; }
+    @media (prefers-color-scheme:dark) { :root { --ink:#edf2ff; --muted:#aab7cf; --bg:#111827; --card:#1b2638; --line:#34445e; } body { background:radial-gradient(circle at 15% 8%,#262a64 0,transparent 35%),radial-gradient(circle at 85% 90%,#4a1c54 0,transparent 31%),var(--bg); } .track { background:#34445e; } }
+    @media (max-width:480px) { body { padding:16px; } header { margin-bottom:16px; } .scene,.flashcard { min-height:330px; } .controls { grid-template-columns:1fr 1fr; } .reveal { grid-column:1/-1; grid-row:1; } }
+  </style>
+</head>
+<body>
+  <main>
+    <header><div><h1>English ↔ Egyptian Arabic</h1><p class="subtitle">Tap a card to reveal the meaning and example.</p></div><div class="progress" id="counter">1 / 33</div></header>
+    <div class="track" aria-hidden="true"><span id="bar"></span></div>
+    <div class="scene">
+      <div class="flashcard" id="card" tabindex="0" role="button" aria-label="Flashcard. Press Enter to reveal the answer.">
+        <section class="face front"><span class="label">English phrase</span><h2 class="term" id="front"></h2><p class="hint">Tap to reveal</p></section>
+        <section class="face back"><span class="label">Meaning & example</span><div class="answer" id="back"></div></section>
+      </div>
+    </div>
+    <div class="controls"><button type="button" id="previous">← Previous</button><button type="button" class="reveal" id="reveal">Reveal answer</button><button type="button" id="next">Next →</button></div>
+    <div class="study" id="study" hidden><button type="button" class="again" id="again">↻ Study again</button><button type="button" class="know" id="know">✓ I know this</button></div>
+    <p class="status" id="status" aria-live="polite"></p>
+  </main>
+  <script>
+    const cards = [
+      ["get by in + language","Meaning (Egyptian Arabic): تدبّر نفسك باللغة / تعرف تتعامل بيها<br><br>Example: I can get by in German.<br>Translation: أقدر أتعامل بالألماني، حتى لو مش بطلاقة."],
+      ["enroll in","Meaning (Egyptian Arabic): يلتحق بـ / يسجل في<br><br>Example: I enrolled in an English course.<br>Note: Common; slightly formal."],
+      ["sign up for","Meaning (Egyptian Arabic): يسجل في / يشترك في<br><br>Example: I signed up for an English course.<br>Note: Very common in everyday English."],
+      ["subscribe to","Meaning (Egyptian Arabic): يشترك في خدمة / قناة<br><br>Example: I subscribe to several YouTube channels."],
+      ["rehearsal","Meaning (Egyptian Arabic): بروفة<br><br>Example: We have a rehearsal tonight.<br>Note: Common, especially for theater or music."],
+      ["authentic","Meaning (Egyptian Arabic): أصلي / حقيقي وغير مزيف<br><br>Example: This is an authentic Rolex."],
+      ["genuine","Meaning (Egyptian Arabic): أصلي / حقيقي، وأيضًا صادق<br><br>Example: Is this genuine leather?<br>Also: He's genuinely kind."],
+      ["real","Meaning (Egyptian Arabic): حقيقي<br><br>Example: Is this real gold?<br>Note: Extremely common."],
+      ["pure","Meaning (Egyptian Arabic): نقي / خالص<br><br>Examples: pure gold; pure water; pure luck."],
+      ["natural","Meaning (Egyptian Arabic): طبيعي<br><br>Examples: natural ingredients; natural English.<br>Note: Very common."],
+      ["much further along in","Meaning (Egyptian Arabic): متقدم بكتير في<br><br>Example: She's much further along in her career than I am."],
+      ["resolve","Meaning (Egyptian Arabic): يحل مشكلة / خلاف<br><br>Example: We need to resolve this issue.<br>Note: Common, but more formal."],
+      ["work out","Meaning (Egyptian Arabic): تتحل / نلاقي حل<br><br>Example: I'm sure we'll work it out.<br>Note: Very common."],
+      ["settle down","Meaning (Egyptian Arabic): يهدأ / يستقر<br><br>Example: Things will settle down eventually."],
+      ["cream off","Meaning (Egyptian Arabic): يأخذ أفضل جزء / أشخاص<br><br>Example: The system creams off the best students.<br>Note: Less common; mainly useful to recognize."],
+      ["let up","Meaning (Egyptian Arabic): يقل / يهدأ<br><br>Examples: The rain finally let up. / The pressure hasn't let up."],
+      ["more or less","Meaning (Egyptian Arabic): تقريبًا / إلى حد ما<br><br>Example: I'm more or less done.<br>Note: Very common."],
+      ["attention-grabbing","Meaning (Egyptian Arabic): يجذب الانتباه<br><br>Example: attention-grabbing headlines."],
+      ["poll","Meaning (Egyptian Arabic): استطلاع رأي<br><br>Example: According to a recent poll..."],
+      ["weighing it","Meaning (Egyptian Arabic): بيفكر في الموضوع وبيوازن الخيارات<br><br>Example: I'm still weighing it.<br>More natural: I'm weighing my options."],
+      ["handle that tension","Meaning (Egyptian Arabic): يتعامل مع التوتر / التوتر بين أطراف<br><br>Example: How do you handle that tension?"],
+      ["What's pulling me the hardest?","Meaning (Egyptian Arabic): إيه أكتر حاجة بتشدني؟<br><br>Note: Natural, but depends on context."],
+      ["live by","Meaning (Egyptian Arabic): يعيش وفقًا لـ / يلتزم بمبدأ<br><br>Example: I try to live by certain principles."],
+      ["pull in different directions","Meaning (Egyptian Arabic): يشدّوا في اتجاهات مختلفة / يكون عندك دوافع متعارضة<br><br>Example: I feel like I'm being pulled in different directions."],
+      ["assumption","Meaning (Egyptian Arabic): افتراض<br><br>Example: That's just an assumption.<br>Note: Very common."],
+      ["compatibility","Meaning (Egyptian Arabic): التوافق<br><br>Example: Compatibility is important in a relationship."],
+      ["along with","Meaning (Egyptian Arabic): بالإضافة إلى / مع<br><br>Examples: She came along with her sister. / Along with experience, you need patience."],
+      ["mutually agreed upon","Meaning (Egyptian Arabic): متفق عليه من الطرفين<br><br>Example: a mutually agreed-upon solution.<br>Note: Common but formal."],
+      ["practical considerations","Meaning (Egyptian Arabic): اعتبارات عملية<br><br>Example: We need to consider the practical considerations.<br>Note: Formal / business-like."],
+      ["a deprived life","Meaning (Egyptian Arabic): حياة محرومة / تفتقر لأشياء أساسية<br><br>More natural: a life of deprivation."],
+      ["missing companionship","Meaning (Egyptian Arabic): يفتقد الصحبة / الرفقة<br><br>Example: I'm missing companionship.<br>Note: Natural, but somewhat formal/emotional."],
+      ["sound vs. seem","sound = من صوتك واضح إنك…<br>seem = يبدو أنك…<br><br>Examples: You sound tired. / You seem tired."],
+      ["split the chapters across those seven days","Meaning (Egyptian Arabic): أقسم الفصول على الأيام السبعة<br><br>Example: I'll split the chapters across those seven days.<br>Note: Natural."]
+    ];
+    let index = 0, revealed = false, known = 0;
+    const el = id => document.getElementById(id);
+    const card = el('card'), front = el('front'), back = el('back'), counter = el('counter'), bar = el('bar'), status = el('status'), study = el('study');
+    function markArabic(text) { return text.replace(/([\u0600-\u06FF][\u0600-\u06FF\s،؟ـًٌٍَُِّْ\/…]*)/g, '<span class="arabic">$1</span>'); }
+    function render() { const [term, answer] = cards[index]; front.textContent = term; back.innerHTML = markArabic(answer); counter.textContent = `${index + 1} / ${cards.length}`; bar.style.width = `${((index + 1) / cards.length) * 100}%`; revealed = false; card.classList.remove('flipped'); study.hidden = true; el('reveal').textContent = 'Reveal answer'; card.setAttribute('aria-label', `Flashcard ${index + 1} of ${cards.length}: ${term}. Press Enter to reveal the answer.`); }
+    function flip() { revealed = !revealed; card.classList.toggle('flipped', revealed); study.hidden = !revealed; el('reveal').textContent = revealed ? 'Hide answer' : 'Reveal answer'; }
+    function move(amount) { index = (index + amount + cards.length) % cards.length; render(); }
+    card.addEventListener('click', flip); card.addEventListener('keydown', e => { if (e.key === 'Enter' || e.key === ' ') { e.preventDefault(); flip(); } });
+    el('reveal').addEventListener('click', flip); el('previous').addEventListener('click', () => move(-1)); el('next').addEventListener('click', () => move(1));
+    el('again').addEventListener('click', () => { status.textContent = 'Kept for review.'; move(1); });
+    el('know').addEventListener('click', () => { known++; status.textContent = `Marked known: ${known}`; move(1); });
+    document.addEventListener('keydown', e => { if (e.target.tagName === 'BUTTON') return; if (e.key === 'ArrowRight') move(1); if (e.key === 'ArrowLeft') move(-1); });
+    render();
+  </script>
+</body>
+</html>
